@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="logo-title logo-desc">
+  <title id="logo-title">FusionCompute FC</title>
+  <desc id="logo-desc">A geometric FC monogram in mint on a navy field.</desc>
+  <rect width="64" height="64" fill="#0d1626"/>
+  <rect x="5" y="5" width="54" height="54" fill="#13213a" stroke="#2b3c58" stroke-width="2"/>
+  <path id="monogram-f" fill="#38d8a7" d="M10 12h21v8H18v8h11v8H18v16h-8z"/>
+  <path id="monogram-c" fill="#b8f8e4" d="M54 19.5C51.2 17.6 48.1 16.6 44.5 16.6c-8.7 0-15.5 6.5-15.5 15.4s6.8 15.4 15.5 15.4c3.6 0 6.7-1 9.5-2.9v-9.2c-2.3 2.6-5.3 4-8.5 4-5.1 0-8.7-3.1-8.7-7.3s3.6-7.3 8.7-7.3c3.2 0 6.2 1.4 8.5 4z"/>
+</svg>

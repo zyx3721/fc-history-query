@@ -1,0 +1,144 @@
+name: CI/CD
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: 登录 Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 生成标签
+        id: tags
+        run: |
+          IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/fc-history-query"
+          VERSION=${GITHUB_REF#refs/tags/v}
+          if [[ "$VERSION" =~ (alpha|beta|rc|pre) ]]; then
+            echo "tags=${IMAGE}:${VERSION}" >> $GITHUB_OUTPUT
+            echo "📦 检测到预发布版本: v${VERSION} (不打 latest 标签)"
+          else
+            echo "tags=${IMAGE}:${VERSION},${IMAGE}:latest" >> $GITHUB_OUTPUT
+            echo "🚀 正式版本: v${VERSION} (打 latest 标签)"
+          fi
+
+      - name: 设置 Go 环境
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: 交叉编译二进制文件
+        run: |
+          echo "🔨 编译 Linux AMD64..."
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o fc-history-query-linux-amd64 ./cmd/server/main.go
+
+          echo "🔨 编译 Linux ARM64..."
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w" -o fc-history-query-linux-arm64 ./cmd/server/main.go
+
+          echo "🔨 编译 macOS AMD64..."
+          GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o fc-history-query-macos-amd64 ./cmd/server/main.go
+
+          echo "🔨 编译 macOS ARM64..."
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w" -o fc-history-query-macos-arm64 ./cmd/server/main.go
+
+          echo "🔨 编译 Windows AMD64..."
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o fc-history-query-windows-amd64.exe ./cmd/server/main.go
+
+          echo "🔨 编译 Windows ARM64..."
+          GOOS=windows GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w" -o fc-history-query-windows-arm64.exe ./cmd/server/main.go
+
+          echo "📝 生成校验和..."
+          sha256sum \
+            fc-history-query-linux-amd64 \
+            fc-history-query-linux-arm64 \
+            fc-history-query-macos-amd64 \
+            fc-history-query-macos-arm64 \
+            fc-history-query-windows-amd64.exe \
+            fc-history-query-windows-arm64.exe \
+            > checksums.txt
+
+          echo "✅ 编译完成"
+
+      - name: 构建并推送 Docker 镜像
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+
+      - name: 生成 Changelog
+        id: changelog
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -n "$PREV_TAG" ]; then
+            COMMITS=$(git log $PREV_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges -10)
+          fi
+
+          if [[ "$VERSION" =~ (alpha|beta|rc|pre) ]]; then
+            IS_PRERELEASE="true"
+          else
+            IS_PRERELEASE="false"
+          fi
+
+          cat > release_notes.md << EOF
+          ## 🎉 fc-history-query v${VERSION} 发布
+
+          ### 📋 构建信息
+          - **版本**: v${VERSION}
+          - **Commit**: ${GITHUB_SHA:0:7}
+          - **构建时间**: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          ### 📝 更新内容
+          ${COMMITS}
+
+          ### 🐳 Docker 镜像
+          \`\`\`bash
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/fc-history-query:${VERSION}
+          \`\`\`
+
+          ### 📦 二进制下载
+          - Linux AMD64: \`fc-history-query-linux-amd64\`
+          - Linux ARM64: \`fc-history-query-linux-arm64\`
+          - macOS AMD64: \`fc-history-query-macos-amd64\`
+          - macOS ARM64: \`fc-history-query-macos-arm64\`
+          - Windows AMD64: \`fc-history-query-windows-amd64.exe\`
+          - Windows ARM64: \`fc-history-query-windows-arm64.exe\`
+
+          ### 🔐 校验和
+          请下载对应的 \`checksums.txt\` 验证文件完整性。
+          EOF
+
+          echo "is_prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+
+      - name: 创建 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ steps.changelog.outputs.is_prerelease == 'true' }}
+          generate_release_notes: false
+          files: |
+            fc-history-query-linux-amd64
+            fc-history-query-linux-arm64
+            fc-history-query-macos-amd64
+            fc-history-query-macos-arm64
+            fc-history-query-windows-amd64.exe
+            fc-history-query-windows-arm64.exe
+            checksums.txt
