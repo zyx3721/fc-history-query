@@ -1,117 +1,649 @@
 <!doctype html>
 <html lang="zh-CN">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="light dark">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
     <title>FusionCompute 历史低负载查询</title>
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <main class="shell">
       <header class="masthead">
-        <img class="brand-mark" src="/favicon.svg" alt="">
+        <img class="brand-mark" src="/favicon.svg" alt="" />
         <div class="brand-copy">
           <p class="eyebrow">OPERATIONS ANALYZER</p>
           <h1 data-i18n="appName">历史低负载查询</h1>
-          <p class="brand-subtitle" data-i18n="appSubtitle">FusionCompute Resource Insights</p>
+          <p class="brand-subtitle" data-i18n="appSubtitle">
+            FusionCompute Resource Insights
+          </p>
         </div>
-        <div class="header-controls" aria-label="页面设置" data-i18n-aria="pageSettings">
-          <button class="control-button" id="languageToggle" type="button" aria-label="Switch to English">EN</button>
-          <button class="control-button theme-control" id="themeToggle" type="button" aria-label="切换到深色主题"><img class="theme-icon" id="themeIcon" src="/theme-icon-light.png" alt=""></button>
+        <div
+          class="header-controls"
+          aria-label="页面设置"
+          data-i18n-aria="pageSettings"
+        >
+          <button
+            class="control-button"
+            id="languageToggle"
+            type="button"
+            aria-label="Switch to English"
+          >
+            EN
+          </button>
+          <button
+            class="control-button theme-control"
+            id="themeToggle"
+            type="button"
+            aria-label="切换到深色主题"
+          >
+            <img
+              class="theme-icon"
+              id="themeIcon"
+              src="/theme-icon-light.png"
+              alt=""
+            />
+          </button>
         </div>
       </header>
 
       <form id="queryForm">
-      <section class="panel connection-panel" aria-labelledby="connection-title">
-        <div class="section-heading"><span>01</span><h2 id="connection-title" data-i18n="connectionTitle">VRM 连接</h2></div>
-        <div class="fields connection-fields">
-          <label><span data-i18n="baseUrl">私有云平台地址</span><input id="baseUrl" type="url" placeholder="https://vrm:7443" required></label>
-          <label><span data-i18n="accountType">账号类型</span><span class="select-control"><select id="userType"><option value="0" selected data-i18n="localUser">本地用户</option><option value="1" data-i18n="domainUser">域用户</option></select><img class="select-caret" src="/select-caret.png" alt="" aria-hidden="true"></span></label>
-          <label><span data-i18n="username">用户名</span><input id="username" type="text" autocomplete="username" required></label>
-          <label><span data-i18n="password">密码</span><span class="password-control"><input id="password" type="password" autocomplete="current-password" required><button class="password-toggle" id="passwordToggle" type="button" aria-label="显示密码" aria-pressed="false"><img class="password-icon" id="passwordIcon" src="/password-show.svg" alt=""></button></span></label>
-        </div>
-      </section>
+        <section
+          class="panel connection-panel"
+          aria-labelledby="connection-title"
+        >
+          <div class="section-heading">
+            <span>01</span>
+            <h2 id="connection-title" data-i18n="connectionTitle">VRM 连接</h2>
+          </div>
+          <div class="fields connection-fields">
+            <label
+              ><span data-i18n="baseUrl">私有云平台地址</span
+              ><input
+                id="baseUrl"
+                type="url"
+                placeholder="https://vrm:7443"
+                required
+            /></label>
+            <label
+              ><span data-i18n="accountType">账号类型</span
+              ><span class="select-control"
+                ><select id="userType">
+                  <option value="0" selected data-i18n="localUser">
+                    本地用户
+                  </option>
+                  <option value="1" data-i18n="domainUser">
+                    域用户
+                  </option></select
+                ><img
+                  class="select-caret"
+                  src="/select-caret.png"
+                  alt=""
+                  aria-hidden="true" /></span
+            ></label>
+            <label
+              ><span data-i18n="username">用户名</span
+              ><input
+                id="username"
+                type="text"
+                autocomplete="username"
+                required
+            /></label>
+            <label
+              ><span data-i18n="password">密码</span
+              ><span class="password-control"
+                ><input
+                  id="password"
+                  type="password"
+                  autocomplete="current-password"
+                  required /><button
+                  class="password-toggle"
+                  id="passwordToggle"
+                  type="button"
+                  aria-label="显示密码"
+                  aria-pressed="false"
+                >
+                  <img
+                    class="password-icon"
+                    id="passwordIcon"
+                    src="/password-show.svg"
+                    alt=""
+                  /></button></span
+            ></label>
+          </div>
+        </section>
 
-      <section class="panel condition-panel" aria-labelledby="condition-title">
-        <div class="section-heading"><span>02</span><h2 id="condition-title" data-i18n="filterTitle">筛选条件</h2></div>
-        <div class="fields condition-fields">
-          <label><span data-i18n="queryStart">查询开始</span><input id="start" type="datetime-local" required></label>
-          <label><span data-i18n="queryEnd">查询结束</span><input id="end" type="datetime-local" required></label>
-          <label><span data-i18n="interval">时间粒度</span><span class="select-control"><select id="intervalSeconds"><option value="300" data-i18n="fiveMinutes">5 分钟</option><option value="1800" data-i18n="thirtyMinutes">30 分钟</option><option value="3600" data-i18n="oneHour">1 小时</option><option value="86400" selected data-i18n="oneDay">1 天</option></select><img class="select-caret" src="/select-caret.png" alt="" aria-hidden="true"></span></label>
-          <label><span data-i18n="batchSize">每批虚拟机</span><span class="select-control"><select id="batchSize"><option value="10" data-i18n="tenVMs">10 台</option><option value="20" data-i18n="twentyVMs">20 台</option><option value="30" data-i18n="thirtyVMs">30 台</option><option value="50" selected data-i18n="fiftyVMs">50 台</option><option value="100" data-i18n="hundredVMs">100 台</option></select><img class="select-caret" src="/select-caret.png" alt="" aria-hidden="true"></span></label>
-        </div>
-        <div class="metrics" role="group" aria-label="监控指标与阈值" data-i18n-aria="metricGroup">
-          <label class="metric-card"><input class="metric-enabled" type="checkbox" value="cpu_usage" checked><span class="metric-name" data-i18n="cpuUsage">CPU 占用率</span><span class="metric-input"><input class="threshold" data-metric="cpu_usage" type="number" min="0" max="100" value="10"><b>%</b></span></label>
-          <label class="metric-card"><input class="metric-enabled" type="checkbox" value="mem_usage" checked><span class="metric-name" data-i18n="memoryUsage">内存占用率</span><span class="metric-input"><input class="threshold" data-metric="mem_usage" type="number" min="0" max="100" value="30"><b>%</b></span></label>
-          <label class="metric-card"><input class="metric-enabled" type="checkbox" value="disk_usage" checked><span class="metric-name" data-i18n="diskUsage">磁盘占用率</span><span class="metric-input"><input class="threshold" data-metric="disk_usage" type="number" min="0" max="100" value="50"><b>%</b></span></label>
-        </div>
-        <div class="rule-row">
-          <label><span data-i18n="matchRule">判定规则</span><span class="select-control"><select id="matchMode"><option value="all" data-i18n="allSamples">所有采样点均低于阈值</option><option value="ratio" data-i18n="sampleRatio">低于阈值的采样点比例</option></select><img class="select-caret" src="/select-caret.png" alt="" aria-hidden="true"></span></label>
-          <label id="ratioWrap" hidden><span data-i18n="minimumRatio">最低比例</span><input id="requiredRatio" type="number" min="0" max="100" value="95"><span>%</span></label>
-          <label class="sort-field"><span data-i18n="sortBy">同结论内排序</span><span class="select-control"><select id="sortBy"><option value="ip" selected data-i18n="sortIP">IP 地址</option><option value="name" data-i18n="sortName">虚拟机名称</option><option value="description" data-i18n="sortDescription">描述</option><option value="cluster" data-i18n="sortCluster">集群</option><option value="host" data-i18n="sortHost">主机</option><option value="cpu_max" data-i18n="sortCPUMax">CPU 最大值</option><option value="cpu_avg" data-i18n="sortCPUAvg">CPU 平均值</option><option value="memory_max" data-i18n="sortMemoryMax">内存最大值</option><option value="memory_avg" data-i18n="sortMemoryAvg">内存平均值</option><option value="disk_max" data-i18n="sortDiskMax">磁盘最大值</option><option value="disk_avg" data-i18n="sortDiskAvg">磁盘平均值</option></select><img class="select-caret" src="/select-caret.png" alt="" aria-hidden="true"></span></label>
-          <label class="sort-direction"><span data-i18n="sortDirection">排序方向</span><span class="select-control"><select id="sortDirection"><option value="asc" selected data-i18n="ascending">升序</option><option value="desc" data-i18n="descending">降序</option></select><img class="select-caret" src="/select-caret.png" alt="" aria-hidden="true"></span></label>
-        </div>
-      </section>
+        <section
+          class="panel condition-panel"
+          aria-labelledby="condition-title"
+        >
+          <div class="section-heading">
+            <span>02</span>
+            <h2 id="condition-title" data-i18n="filterTitle">筛选条件</h2>
+          </div>
+          <div class="fields condition-fields">
+            <label
+              ><span data-i18n="queryStart">查询开始</span
+              ><input id="start" type="datetime-local" required
+            /></label>
+            <label
+              ><span data-i18n="queryEnd">查询结束</span
+              ><input id="end" type="datetime-local" required
+            /></label>
+            <label
+              ><span data-i18n="interval">时间粒度</span
+              ><span class="select-control"
+                ><select id="intervalSeconds">
+                  <option value="60" data-i18n="oneMinute">1 分钟</option>
+                  <option value="300" data-i18n="fiveMinutes">5 分钟</option>
+                  <option value="600" data-i18n="tenMinutes">10 分钟</option>
+                  <option value="1800" data-i18n="thirtyMinutes">
+                    30 分钟
+                  </option>
+                  <option value="3600" data-i18n="oneHour">1 小时</option>
+                  <option value="86400" selected data-i18n="oneDay">
+                    1 天
+                  </option>
+                  <option value="2592000" data-i18n="thirtyDays">
+                    30 天
+                  </option></select
+                ><img
+                  class="select-caret"
+                  src="/select-caret.png"
+                  alt=""
+                  aria-hidden="true" /></span
+            ></label>
+            <label
+              ><span data-i18n="batchSize">每批虚拟机</span
+              ><span class="select-control"
+                ><select id="batchSize">
+                  <option value="10" data-i18n="tenVMs">10 台</option>
+                  <option value="20" data-i18n="twentyVMs">20 台</option>
+                  <option value="30" data-i18n="thirtyVMs">30 台</option>
+                  <option value="50" data-i18n="fiftyVMs">50 台</option>
+                  <option value="100" selected data-i18n="hundredVMs">
+                    100 台
+                  </option></select
+                ><img
+                  class="select-caret"
+                  src="/select-caret.png"
+                  alt=""
+                  aria-hidden="true" /></span
+            ></label>
+          </div>
+          <div
+            class="metrics"
+            role="group"
+            aria-label="监控指标与阈值"
+            data-i18n-aria="metricGroup"
+          >
+            <label class="metric-card"
+              ><input
+                class="metric-enabled"
+                type="checkbox"
+                value="cpu_usage"
+                checked
+              /><span class="metric-name" data-i18n="cpuUsage">CPU 占用率</span
+              ><span class="metric-input"
+                ><input
+                  class="threshold"
+                  data-metric="cpu_usage"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value="10"
+                /><b>%</b></span
+              ></label
+            >
+            <label class="metric-card"
+              ><input
+                class="metric-enabled"
+                type="checkbox"
+                value="mem_usage"
+                checked
+              /><span class="metric-name" data-i18n="memoryUsage"
+                >内存占用率</span
+              ><span class="metric-input"
+                ><input
+                  class="threshold"
+                  data-metric="mem_usage"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value="30"
+                /><b>%</b></span
+              ></label
+            >
+            <label class="metric-card"
+              ><input
+                class="metric-enabled"
+                type="checkbox"
+                value="disk_usage"
+                checked
+              /><span class="metric-name" data-i18n="diskUsage">磁盘占用率</span
+              ><span class="metric-input"
+                ><input
+                  class="threshold"
+                  data-metric="disk_usage"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value="50"
+                /><b>%</b></span
+              ></label
+            >
+          </div>
+          <div class="rule-row">
+            <label
+              ><span data-i18n="matchRule">判定规则</span
+              ><span class="select-control"
+                ><select id="matchMode">
+                  <option value="all" data-i18n="allSamples">
+                    所有采样点均低于阈值
+                  </option>
+                  <option value="ratio" data-i18n="sampleRatio">
+                    低于阈值的采样点比例
+                  </option></select
+                ><img
+                  class="select-caret"
+                  src="/select-caret.png"
+                  alt=""
+                  aria-hidden="true" /></span
+            ></label>
+            <label id="ratioWrap" hidden
+              ><span data-i18n="minimumRatio">最低比例</span
+              ><input
+                id="requiredRatio"
+                type="number"
+                min="0"
+                max="100"
+                value="95"
+              /><span>%</span></label
+            >
+            <label class="sort-field"
+              ><span data-i18n="sortBy">同结论内排序</span
+              ><span class="select-control"
+                ><select id="sortBy">
+                  <option value="ip" selected data-i18n="sortIP">
+                    IP 地址
+                  </option>
+                  <option value="name" data-i18n="sortName">虚拟机名称</option>
+                  <option value="description" data-i18n="sortDescription">
+                    描述
+                  </option>
+                  <option value="cluster" data-i18n="sortCluster">集群</option>
+                  <option value="host" data-i18n="sortHost">主机</option>
+                  <option value="cpu_max" data-i18n="sortCPUMax">
+                    CPU 最大值
+                  </option>
+                  <option value="cpu_avg" data-i18n="sortCPUAvg">
+                    CPU 平均值
+                  </option>
+                  <option value="memory_max" data-i18n="sortMemoryMax">
+                    内存最大值
+                  </option>
+                  <option value="memory_avg" data-i18n="sortMemoryAvg">
+                    内存平均值
+                  </option>
+                  <option value="disk_max" data-i18n="sortDiskMax">
+                    磁盘最大值
+                  </option>
+                  <option value="disk_avg" data-i18n="sortDiskAvg">
+                    磁盘平均值
+                  </option></select
+                ><img
+                  class="select-caret"
+                  src="/select-caret.png"
+                  alt=""
+                  aria-hidden="true" /></span
+            ></label>
+            <label class="sort-direction"
+              ><span data-i18n="sortDirection">排序方向</span
+              ><span class="select-control"
+                ><select id="sortDirection">
+                  <option value="asc" selected data-i18n="ascending">
+                    升序
+                  </option>
+                  <option value="desc" data-i18n="descending">
+                    降序
+                  </option></select
+                ><img
+                  class="select-caret"
+                  src="/select-caret.png"
+                  alt=""
+                  aria-hidden="true" /></span
+            ></label>
+          </div>
+        </section>
 
-      <section class="actions" aria-label="查询操作" data-i18n-aria="queryActions">
-        <button class="primary" id="runButton" type="submit" data-i18n="runQuery">执行历史查询</button>
-        <button class="secondary" id="cancelButton" type="button" disabled data-i18n="cancelQuery">取消查询</button>
-        <button class="secondary" id="exportButton" type="button" disabled data-i18n="exportExcel">导出 Excel</button>
-      </section>
+        <section
+          class="actions"
+          aria-label="查询操作"
+          data-i18n-aria="queryActions"
+        >
+          <button
+            class="primary"
+            id="runButton"
+            type="submit"
+            data-i18n="runQuery"
+          >
+            执行历史查询
+          </button>
+          <button
+            class="secondary"
+            id="cancelButton"
+            type="button"
+            disabled
+            data-i18n="cancelQuery"
+          >
+            取消查询
+          </button>
+          <button
+            class="secondary"
+            id="exportButton"
+            type="button"
+            disabled
+            data-i18n="exportExcel"
+          >
+            导出 Excel
+          </button>
+        </section>
       </form>
 
       <section class="status" id="status" hidden aria-live="polite">
-        <div class="status-line"><span id="statusText"></span><strong id="statusCount"></strong></div>
+        <div class="status-line">
+          <span id="statusText"></span><strong id="statusCount"></strong>
+        </div>
         <div class="progress-track"><div id="progressFill"></div></div>
       </section>
 
       <section class="panel result-panel" aria-labelledby="results-title">
-        <div class="result-heading"><div class="section-heading"><span>03</span><h2 id="results-title" data-i18n="resultsTitle">查询结果</h2></div><p id="resultSummary" data-i18n="notQueried">尚未执行查询</p></div>
-        <div class="result-filters" id="resultFilters" hidden aria-label="查询结果筛选" data-i18n-aria="resultFilters">
-          <div class="result-filter-primary">
-            <label class="result-search"><span data-i18n="searchAll">搜索全部内容</span><input id="resultSearch" type="search" autocomplete="off" data-i18n-placeholder="searchAllPlaceholder" placeholder="输入虚拟机、IP、用途等内容"></label>
-            <label><span data-i18n="filterConclusion">结论</span><span class="select-control"><select id="resultConclusion"><option value="" data-i18n="allConclusions">全部结论</option><option value="pass" data-i18n="pass">符合</option><option value="fail" data-i18n="fail">不符合</option></select><img class="select-caret" src="/select-caret.png" alt="" aria-hidden="true"></span></label>
-            <label><span data-i18n="filterManager">管理人</span><span class="select-control"><select id="resultManager"><option value="" data-i18n="allManagers">全部管理人</option></select><img class="select-caret" src="/select-caret.png" alt="" aria-hidden="true"></span></label>
-            <label><span data-i18n="filterCluster">集群</span><span class="select-control"><select id="resultCluster"><option value="" data-i18n="allClusters">全部集群</option></select><img class="select-caret" src="/select-caret.png" alt="" aria-hidden="true"></span></label>
-            <label><span data-i18n="filterHost">主机</span><span class="select-control"><select id="resultHost"><option value="" data-i18n="allHosts">全部主机</option></select><img class="select-caret" src="/select-caret.png" alt="" aria-hidden="true"></span></label>
-            <button class="result-filter-reset" id="resetResultFilters" type="button" data-i18n="resetFilters">重置筛选</button>
+        <div class="result-heading">
+          <div class="section-heading">
+            <span>03</span>
+            <h2 id="results-title" data-i18n="resultsTitle">查询结果</h2>
           </div>
-          <div class="result-metric-filters" aria-label="资源指标筛选" data-i18n-aria="resultMetricFilters">
+          <p id="resultSummary" data-i18n="notQueried">尚未执行查询</p>
+        </div>
+        <div
+          class="result-filters"
+          id="resultFilters"
+          hidden
+          aria-label="查询结果筛选"
+          data-i18n-aria="resultFilters"
+        >
+          <div class="result-filter-primary">
+            <label class="result-search"
+              ><span data-i18n="searchAll">搜索全部内容</span
+              ><input
+                id="resultSearch"
+                type="search"
+                autocomplete="off"
+                data-i18n-placeholder="searchAllPlaceholder"
+                placeholder="输入虚拟机、IP、用途等内容"
+            /></label>
+            <label
+              ><span data-i18n="filterConclusion">结论</span
+              ><span class="select-control"
+                ><select id="resultConclusion">
+                  <option value="" data-i18n="allConclusions">全部结论</option>
+                  <option value="pass" data-i18n="pass">符合</option>
+                  <option value="fail" data-i18n="fail">不符合</option></select
+                ><img
+                  class="select-caret"
+                  src="/select-caret.png"
+                  alt=""
+                  aria-hidden="true" /></span
+            ></label>
+            <label
+              ><span data-i18n="filterManager">管理人</span
+              ><span class="select-control"
+                ><select id="resultManager">
+                  <option value="" data-i18n="allManagers">
+                    全部管理人
+                  </option></select
+                ><img
+                  class="select-caret"
+                  src="/select-caret.png"
+                  alt=""
+                  aria-hidden="true" /></span
+            ></label>
+            <label
+              ><span data-i18n="filterCluster">集群</span
+              ><span class="select-control"
+                ><select id="resultCluster">
+                  <option value="" data-i18n="allClusters">
+                    全部集群
+                  </option></select
+                ><img
+                  class="select-caret"
+                  src="/select-caret.png"
+                  alt=""
+                  aria-hidden="true" /></span
+            ></label>
+            <label
+              ><span data-i18n="filterHost">主机</span
+              ><span class="select-control"
+                ><select id="resultHost">
+                  <option value="" data-i18n="allHosts">
+                    全部主机
+                  </option></select
+                ><img
+                  class="select-caret"
+                  src="/select-caret.png"
+                  alt=""
+                  aria-hidden="true" /></span
+            ></label>
+            <button
+              class="result-filter-reset"
+              id="resetResultFilters"
+              type="button"
+              data-i18n="resetFilters"
+            >
+              重置筛选
+            </button>
+          </div>
+          <div
+            class="result-metric-filters"
+            aria-label="资源指标筛选"
+            data-i18n-aria="resultMetricFilters"
+          >
             <div class="result-metric-filter">
               <strong data-i18n="filterCPU">CPU</strong>
-              <span class="select-control"><select id="cpuFilterStatistic" aria-label="CPU 统计值" data-i18n-aria="cpuStatistic"><option value="maximum" data-i18n="maximum">最大值</option><option value="average" data-i18n="average">平均值</option></select><img class="select-caret" src="/select-caret.png" alt="" aria-hidden="true"></span>
-              <span class="select-control"><select id="cpuFilterOperator" aria-label="CPU 比较条件" data-i18n-aria="cpuOperator"><option value="gt" data-i18n="greaterThan">超过</option><option value="lte" data-i18n="notGreaterThan">不超过</option></select><img class="select-caret" src="/select-caret.png" alt="" aria-hidden="true"></span>
-              <input id="cpuFilterValue" class="result-metric-value" type="number" min="0" max="100" step="any" inputmode="decimal" aria-label="CPU 阈值" data-i18n-aria="cpuThreshold" data-i18n-placeholder="metricValuePlaceholder" placeholder="阈值 %">
+              <span class="select-control"
+                ><select
+                  id="cpuFilterStatistic"
+                  aria-label="CPU 统计值"
+                  data-i18n-aria="cpuStatistic"
+                >
+                  <option value="maximum" data-i18n="maximum">最大值</option>
+                  <option value="average" data-i18n="average">
+                    平均值
+                  </option></select
+                ><img
+                  class="select-caret"
+                  src="/select-caret.png"
+                  alt=""
+                  aria-hidden="true"
+              /></span>
+              <span class="select-control"
+                ><select
+                  id="cpuFilterOperator"
+                  aria-label="CPU 比较条件"
+                  data-i18n-aria="cpuOperator"
+                >
+                  <option value="gt" data-i18n="greaterThan">超过</option>
+                  <option value="lte" data-i18n="notGreaterThan">
+                    不超过
+                  </option></select
+                ><img
+                  class="select-caret"
+                  src="/select-caret.png"
+                  alt=""
+                  aria-hidden="true"
+              /></span>
+              <input
+                id="cpuFilterValue"
+                class="result-metric-value"
+                type="number"
+                min="0"
+                max="100"
+                step="any"
+                inputmode="decimal"
+                aria-label="CPU 阈值"
+                data-i18n-aria="cpuThreshold"
+                data-i18n-placeholder="metricValuePlaceholder"
+                placeholder="阈值 %"
+              />
             </div>
             <div class="result-metric-filter">
               <strong data-i18n="filterMemory">内存</strong>
-              <span class="select-control"><select id="memoryFilterStatistic" aria-label="内存统计值" data-i18n-aria="memoryStatistic"><option value="maximum" data-i18n="maximum">最大值</option><option value="average" data-i18n="average">平均值</option></select><img class="select-caret" src="/select-caret.png" alt="" aria-hidden="true"></span>
-              <span class="select-control"><select id="memoryFilterOperator" aria-label="内存比较条件" data-i18n-aria="memoryOperator"><option value="gt" data-i18n="greaterThan">超过</option><option value="lte" data-i18n="notGreaterThan">不超过</option></select><img class="select-caret" src="/select-caret.png" alt="" aria-hidden="true"></span>
-              <input id="memoryFilterValue" class="result-metric-value" type="number" min="0" max="100" step="any" inputmode="decimal" aria-label="内存阈值" data-i18n-aria="memoryThreshold" data-i18n-placeholder="metricValuePlaceholder" placeholder="阈值 %">
+              <span class="select-control"
+                ><select
+                  id="memoryFilterStatistic"
+                  aria-label="内存统计值"
+                  data-i18n-aria="memoryStatistic"
+                >
+                  <option value="maximum" data-i18n="maximum">最大值</option>
+                  <option value="average" data-i18n="average">
+                    平均值
+                  </option></select
+                ><img
+                  class="select-caret"
+                  src="/select-caret.png"
+                  alt=""
+                  aria-hidden="true"
+              /></span>
+              <span class="select-control"
+                ><select
+                  id="memoryFilterOperator"
+                  aria-label="内存比较条件"
+                  data-i18n-aria="memoryOperator"
+                >
+                  <option value="gt" data-i18n="greaterThan">超过</option>
+                  <option value="lte" data-i18n="notGreaterThan">
+                    不超过
+                  </option></select
+                ><img
+                  class="select-caret"
+                  src="/select-caret.png"
+                  alt=""
+                  aria-hidden="true"
+              /></span>
+              <input
+                id="memoryFilterValue"
+                class="result-metric-value"
+                type="number"
+                min="0"
+                max="100"
+                step="any"
+                inputmode="decimal"
+                aria-label="内存阈值"
+                data-i18n-aria="memoryThreshold"
+                data-i18n-placeholder="metricValuePlaceholder"
+                placeholder="阈值 %"
+              />
             </div>
             <div class="result-metric-filter">
               <strong data-i18n="filterDisk">磁盘</strong>
-              <span class="select-control"><select id="diskFilterStatistic" aria-label="磁盘统计值" data-i18n-aria="diskStatistic"><option value="maximum" data-i18n="maximum">最大值</option><option value="average" data-i18n="average">平均值</option></select><img class="select-caret" src="/select-caret.png" alt="" aria-hidden="true"></span>
-              <span class="select-control"><select id="diskFilterOperator" aria-label="磁盘比较条件" data-i18n-aria="diskOperator"><option value="gt" data-i18n="greaterThan">超过</option><option value="lte" data-i18n="notGreaterThan">不超过</option></select><img class="select-caret" src="/select-caret.png" alt="" aria-hidden="true"></span>
-              <input id="diskFilterValue" class="result-metric-value" type="number" min="0" max="100" step="any" inputmode="decimal" aria-label="磁盘阈值" data-i18n-aria="diskThreshold" data-i18n-placeholder="metricValuePlaceholder" placeholder="阈值 %">
+              <span class="select-control"
+                ><select
+                  id="diskFilterStatistic"
+                  aria-label="磁盘统计值"
+                  data-i18n-aria="diskStatistic"
+                >
+                  <option value="maximum" data-i18n="maximum">最大值</option>
+                  <option value="average" data-i18n="average">
+                    平均值
+                  </option></select
+                ><img
+                  class="select-caret"
+                  src="/select-caret.png"
+                  alt=""
+                  aria-hidden="true"
+              /></span>
+              <span class="select-control"
+                ><select
+                  id="diskFilterOperator"
+                  aria-label="磁盘比较条件"
+                  data-i18n-aria="diskOperator"
+                >
+                  <option value="gt" data-i18n="greaterThan">超过</option>
+                  <option value="lte" data-i18n="notGreaterThan">
+                    不超过
+                  </option></select
+                ><img
+                  class="select-caret"
+                  src="/select-caret.png"
+                  alt=""
+                  aria-hidden="true"
+              /></span>
+              <input
+                id="diskFilterValue"
+                class="result-metric-value"
+                type="number"
+                min="0"
+                max="100"
+                step="any"
+                inputmode="decimal"
+                aria-label="磁盘阈值"
+                data-i18n-aria="diskThreshold"
+                data-i18n-placeholder="metricValuePlaceholder"
+                placeholder="阈值 %"
+              />
             </div>
           </div>
-          <p class="result-filter-count" id="resultFilterCount" aria-live="polite"></p>
+          <p
+            class="result-filter-count"
+            id="resultFilterCount"
+            aria-live="polite"
+          ></p>
         </div>
         <div class="table-wrap">
           <table>
             <colgroup>
-              <col class="col-conclusion"><col class="col-vm"><col class="col-ip"><col class="col-purpose"><col class="col-manager"><col class="col-term"><col class="col-cluster-host"><col class="col-metric"><col class="col-metric"><col class="col-metric"><col class="col-ratio">
+              <col class="col-conclusion" />
+              <col class="col-vm" />
+              <col class="col-ip" />
+              <col class="col-purpose" />
+              <col class="col-manager" />
+              <col class="col-term" />
+              <col class="col-cluster-host" />
+              <col class="col-metric" />
+              <col class="col-metric" />
+              <col class="col-metric" />
+              <col class="col-ratio" />
             </colgroup>
-            <thead><tr><th data-i18n="conclusion">结论</th><th data-i18n="virtualMachine">虚拟机</th><th>IP</th><th data-i18n="purpose">用途</th><th data-i18n="manager">管理人</th><th data-i18n="term">使用期限</th><th data-i18n="clusterHost">集群 / 主机</th><th data-i18n="cpuMaxAvg">CPU 最大 / 平均</th><th data-i18n="memoryMaxAvg">内存最大 / 平均</th><th data-i18n="diskMaxAvg">磁盘最大 / 平均</th><th data-i18n="lowLoadRatio">低负载比例</th></tr></thead>
-            <tbody id="resultBody"><tr class="empty"><td colspan="11" data-i18n="emptyPrompt">输入连接信息与筛选条件后执行查询</td></tr></tbody>
+            <thead>
+              <tr>
+                <th data-i18n="conclusion">结论</th>
+                <th data-i18n="virtualMachine">虚拟机</th>
+                <th>IP</th>
+                <th data-i18n="purpose">用途</th>
+                <th data-i18n="manager">管理人</th>
+                <th data-i18n="term">使用期限</th>
+                <th data-i18n="clusterHost">集群 / 主机</th>
+                <th data-i18n="cpuMaxAvg">CPU 最大 / 平均</th>
+                <th data-i18n="memoryMaxAvg">内存最大 / 平均</th>
+                <th data-i18n="diskMaxAvg">磁盘最大 / 平均</th>
+                <th data-i18n="lowLoadRatio">低负载比例</th>
+              </tr>
+            </thead>
+            <tbody id="resultBody">
+              <tr class="empty">
+                <td colspan="11" data-i18n="emptyPrompt">
+                  输入连接信息与筛选条件后执行查询
+                </td>
+              </tr>
+            </tbody>
           </table>
         </div>
       </section>
     </main>
-    <template id="toastTemplate"><div class="toast" role="alert"></div></template>
+    <template id="toastTemplate"
+      ><div class="toast" role="alert"></div
+    ></template>
     <script src="/excel-export.js"></script>
     <script src="/app.js"></script>
   </body>

@@ -489,7 +489,10 @@ button:disabled {
 }
 .result-filter-primary {
   display: grid;
-  grid-template-columns: minmax(230px, 1.7fr) repeat(4, minmax(112px, 0.85fr)) auto;
+  grid-template-columns: minmax(230px, 1.7fr) repeat(
+      4,
+      minmax(112px, 0.85fr)
+    ) auto;
   align-items: end;
   gap: 12px;
 }
@@ -525,7 +528,10 @@ button:disabled {
 }
 .result-metric-filter {
   display: grid;
-  grid-template-columns: auto minmax(86px, 1fr) minmax(86px, 1fr) minmax(80px, 0.82fr);
+  grid-template-columns: auto minmax(86px, 1fr) minmax(86px, 1fr) minmax(
+      80px,
+      0.82fr
+    );
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -561,15 +567,33 @@ table {
   border-collapse: collapse;
   table-layout: fixed;
 }
-.col-conclusion { width: 7%; }
-.col-vm { width: 11%; }
-.col-ip { width: 9.5%; }
-.col-purpose { width: 10%; }
-.col-manager { width: 6%; }
-.col-term { width: 7.5%; }
-.col-cluster-host { width: 9.5%; }
-.col-metric { width: 10.5%; }
-.col-ratio { width: 8%; }
+.col-conclusion {
+  width: 7%;
+}
+.col-vm {
+  width: 11%;
+}
+.col-ip {
+  width: 9.5%;
+}
+.col-purpose {
+  width: 10%;
+}
+.col-manager {
+  width: 6%;
+}
+.col-term {
+  width: 7.5%;
+}
+.col-cluster-host {
+  width: 9.5%;
+}
+.col-metric {
+  width: 10.5%;
+}
+.col-ratio {
+  width: 8%;
+}
 th,
 td {
   overflow: hidden;
@@ -769,7 +793,10 @@ td small {
     grid-column: auto;
   }
   .result-metric-filter {
-    grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) minmax(76px, 0.8fr);
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) minmax(
+        76px,
+        0.8fr
+      );
   }
   .result-filter-count {
     text-align: left;

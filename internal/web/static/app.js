@@ -25,10 +25,13 @@ const translations = {
     queryStart: "查询开始",
     queryEnd: "查询结束",
     interval: "时间粒度",
+    oneMinute: "1 分钟",
     fiveMinutes: "5 分钟",
+    tenMinutes: "10 分钟",
     thirtyMinutes: "30 分钟",
     oneHour: "1 小时",
     oneDay: "1 天",
+    thirtyDays: "30 天",
     batchSize: "每批虚拟机",
     tenVMs: "10 台",
     twentyVMs: "20 台",
@@ -95,7 +98,8 @@ const translations = {
     cpuThreshold: "CPU 阈值",
     memoryThreshold: "内存阈值",
     diskThreshold: "磁盘阈值",
-    filteredSummary: "已扫描 {scanned} 台运行中虚拟机，符合条件 {matched} 台｜当前显示 {visible} 台",
+    filteredSummary:
+      "已扫描 {scanned} 台运行中虚拟机，符合条件 {matched} 台｜当前显示 {visible} 台",
     visibleResults: "当前显示 {visible} / {total} 条结果",
     noFilteredResults: "没有符合当前筛选条件的结果",
     conclusion: "结论",
@@ -111,6 +115,7 @@ const translations = {
     lowLoadRatio: "低负载比例",
     emptyPrompt: "输入连接信息与筛选条件后执行查询",
     selectMetric: "至少选择一个监控指标",
+    queryRangeMustExceedInterval: "查询时间范围必须大于所选时间粒度",
     requestFailed: "请求失败 ({status})",
     querying: "正在查询",
     preparing: "正在准备查询",
@@ -144,7 +149,8 @@ const translations = {
     csvMemoryAvg: "内存平均值",
     csvDiskMax: "磁盘最大值",
     csvDiskAvg: "磁盘平均值",
-    exportSummary: "导出时间：{time}｜已扫描 {scanned} 台｜符合 {matched} 台｜实际导出 {exported} 台",
+    exportSummary:
+      "导出时间：{time}｜已扫描 {scanned} 台｜符合 {matched} 台｜实际导出 {exported} 台",
   },
   en: {
     documentTitle: "FusionCompute Historical Low-Load Query",
@@ -170,10 +176,13 @@ const translations = {
     queryStart: "Start time",
     queryEnd: "End time",
     interval: "Interval",
+    oneMinute: "1 minute",
     fiveMinutes: "5 minutes",
+    tenMinutes: "10 minutes",
     thirtyMinutes: "30 minutes",
     oneHour: "1 hour",
     oneDay: "1 day",
+    thirtyDays: "30 days",
     batchSize: "VMs per batch",
     tenVMs: "10 VMs",
     twentyVMs: "20 VMs",
@@ -240,7 +249,8 @@ const translations = {
     cpuThreshold: "CPU threshold",
     memoryThreshold: "Memory threshold",
     diskThreshold: "Disk threshold",
-    filteredSummary: "Scanned {scanned} running VMs; {matched} matched | showing {visible}",
+    filteredSummary:
+      "Scanned {scanned} running VMs; {matched} matched | showing {visible}",
     visibleResults: "Showing {visible} / {total} results",
     noFilteredResults: "No results match the current filters",
     conclusion: "Result",
@@ -256,6 +266,8 @@ const translations = {
     lowLoadRatio: "Low-load ratio",
     emptyPrompt: "Enter connection details and filters to run a query",
     selectMetric: "Select at least one monitoring metric",
+    queryRangeMustExceedInterval:
+      "The query time range must be greater than the selected interval",
     requestFailed: "Request failed ({status})",
     querying: "Querying",
     preparing: "Preparing query",
@@ -289,7 +301,8 @@ const translations = {
     csvMemoryAvg: "Memory average",
     csvDiskMax: "Disk maximum",
     csvDiskAvg: "Disk average",
-    exportSummary: "Exported: {time} | Scanned {scanned} | Matched {matched} | Rows exported {exported}",
+    exportSummary:
+      "Exported: {time} | Scanned {scanned} | Matched {matched} | Rows exported {exported}",
   },
 };
 
@@ -450,9 +463,20 @@ function toLocalInputValue(date) {
 
 function setDefaultDates() {
   const end = new Date();
-  const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const start = new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
   $("#start").value = toLocalInputValue(start);
   $("#end").value = toLocalInputValue(end);
+}
+
+function hasValidQueryRange() {
+  const start = new Date($("#start").value);
+  const end = new Date($("#end").value);
+  const intervalMilliseconds = Number($("#intervalSeconds").value) * 1000;
+  return (
+    !Number.isNaN(start.getTime()) &&
+    !Number.isNaN(end.getTime()) &&
+    end.getTime() - start.getTime() > intervalMilliseconds
+  );
 }
 
 function selectedMetrics() {
@@ -498,6 +522,10 @@ async function runQuery(event) {
   if (!$("#queryForm").reportValidity()) return;
   if (!selectedMetrics().length) {
     toast(t("selectMetric"));
+    return;
+  }
+  if (!hasValidQueryRange()) {
+    toast(t("queryRangeMustExceedInterval"));
     return;
   }
   clearResults();
@@ -669,7 +697,9 @@ function updateResultSelectOptions(selector, values, allLabelKey) {
   [...new Set(values.map((value) => String(value || "-").trim() || "-"))]
     .sort(resultCollator.compare)
     .forEach((value) => select.add(new Option(value, value)));
-  select.value = [...select.options].some((option) => option.value === selectedValue)
+  select.value = [...select.options].some(
+    (option) => option.value === selectedValue,
+  )
     ? selectedValue
     : "";
 }
@@ -748,7 +778,8 @@ function filteredResultRows(rows) {
     if (searchTerm && !rowSearchText(row).includes(searchTerm)) return false;
     if (conclusion && conclusion !== (row.pass ? "pass" : "fail")) return false;
     if (manager && manager !== description.manager) return false;
-    if (cluster && cluster !== String(row.clusterName || "-").trim()) return false;
+    if (cluster && cluster !== String(row.clusterName || "-").trim())
+      return false;
     if (host && host !== String(row.hostName || "-").trim()) return false;
     return resultMetricFilterDefinitions.every((definition) =>
       rowMatchesMetricFilter(row, definition),
@@ -800,14 +831,22 @@ function compareResultRows(left, right, sortBy) {
     if (leftMissing !== rightMissing) return leftMissing ? 1 : -1;
     return Number(leftMetric?.[field] || 0) - Number(rightMetric?.[field] || 0);
   }
-  const fields = { ip: "ip", name: "name", cluster: "clusterName", host: "hostName" };
+  const fields = {
+    ip: "ip",
+    name: "name",
+    cluster: "clusterName",
+    host: "hostName",
+  };
   if (sortBy === "description") {
     return resultCollator.compare(
       splitDescription(left.description).purpose,
       splitDescription(right.description).purpose,
     );
   }
-  return resultCollator.compare(left[fields[sortBy] || "ip"] || "", right[fields[sortBy] || "ip"] || "");
+  return resultCollator.compare(
+    left[fields[sortBy] || "ip"] || "",
+    right[fields[sortBy] || "ip"] || "",
+  );
 }
 
 function renderResults(result) {
@@ -890,7 +929,9 @@ function exportExcel() {
   window.exportQueryWorkbook({
     title: t("documentTitle"),
     subtitle: t("exportSummary", {
-      time: new Date().toLocaleString(state.locale === "zh" ? "zh-CN" : "en-US"),
+      time: new Date().toLocaleString(
+        state.locale === "zh" ? "zh-CN" : "en-US",
+      ),
       scanned: state.result.scanned,
       matched: state.result.matched,
       exported: rows.length,
@@ -921,11 +962,16 @@ $("#sortBy").addEventListener("change", () => {
 $("#sortDirection").addEventListener("change", () => {
   if (state.result) renderResults(state.result);
 });
-document.querySelectorAll("#resultFilters input, #resultFilters select").forEach((input) => {
-  input.addEventListener(input.type === "search" || input.type === "number" ? "input" : "change", () => {
-    if (state.result) renderResults(state.result);
+document
+  .querySelectorAll("#resultFilters input, #resultFilters select")
+  .forEach((input) => {
+    input.addEventListener(
+      input.type === "search" || input.type === "number" ? "input" : "change",
+      () => {
+        if (state.result) renderResults(state.result);
+      },
+    );
   });
-});
 $("#resetResultFilters").addEventListener("click", () => {
   resetResultFilters();
   if (state.result) renderResults(state.result);

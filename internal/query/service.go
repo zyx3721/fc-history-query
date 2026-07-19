@@ -142,9 +142,12 @@ func validateOptions(options domain.QueryOptions) error {
 	if options.RequiredRatio < 0 || options.RequiredRatio > 100 {
 		return fmt.Errorf("低负载比例必须介于 0 到 100")
 	}
-	validIntervals := map[int]bool{60: true, 300: true, 1800: true, 3600: true, 86400: true, 604800: true, 2592000: true, 31536000: true}
+	validIntervals := map[int]bool{60: true, 300: true, 600: true, 1800: true, 3600: true, 86400: true, 604800: true, 2592000: true, 31536000: true}
 	if !validIntervals[options.IntervalSeconds] {
 		return fmt.Errorf("时间粒度不受支持")
+	}
+	if options.End.Sub(options.Start) <= time.Duration(options.IntervalSeconds)*time.Second {
+		return fmt.Errorf("查询时间范围必须大于时间粒度")
 	}
 	for _, metric := range options.Metrics {
 		threshold, ok := options.Thresholds[metric]

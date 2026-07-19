@@ -130,29 +130,64 @@
       const nameBytes = encode(name);
       const checksum = crc32(data);
       const entry = concat(
-        u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0),
-        u32(checksum), u32(data.length), u32(data.length), u16(nameBytes.length),
-        u16(0), nameBytes, data,
+        u32(0x04034b50),
+        u16(20),
+        u16(0),
+        u16(0),
+        u16(0),
+        u16(0),
+        u32(checksum),
+        u32(data.length),
+        u32(data.length),
+        u16(nameBytes.length),
+        u16(0),
+        nameBytes,
+        data,
       );
       local.push(entry);
-      central.push(concat(
-        u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0),
-        u32(checksum), u32(data.length), u32(data.length), u16(nameBytes.length),
-        u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset), nameBytes,
-      ));
+      central.push(
+        concat(
+          u32(0x02014b50),
+          u16(20),
+          u16(20),
+          u16(0),
+          u16(0),
+          u16(0),
+          u16(0),
+          u32(checksum),
+          u32(data.length),
+          u32(data.length),
+          u16(nameBytes.length),
+          u16(0),
+          u16(0),
+          u16(0),
+          u16(0),
+          u32(0),
+          u32(offset),
+          nameBytes,
+        ),
+      );
       offset += entry.length;
     }
     const centralSize = central.reduce((sum, item) => sum + item.length, 0);
     return concat(
       ...local,
       ...central,
-      u32(0x06054b50), u16(0), u16(0), u16(files.size), u16(files.size),
-      u32(centralSize), u32(offset), u16(0),
+      u32(0x06054b50),
+      u16(0),
+      u16(0),
+      u16(files.size),
+      u16(files.size),
+      u32(centralSize),
+      u32(offset),
+      u16(0),
     );
   }
 
   function concat(...parts) {
-    const output = new Uint8Array(parts.reduce((sum, item) => sum + item.length, 0));
+    const output = new Uint8Array(
+      parts.reduce((sum, item) => sum + item.length, 0),
+    );
     let offset = 0;
     for (const part of parts) {
       output.set(part, offset);
