@@ -272,6 +272,9 @@
                   <option value="description" data-i18n="sortDescription">
                     描述
                   </option>
+                  <option value="first_sample_at" data-i18n="sortFirstSampleAt">
+                    最早有效采集时间
+                  </option>
                   <option value="cluster" data-i18n="sortCluster">集群</option>
                   <option value="host" data-i18n="sortHost">主机</option>
                   <option value="cpu_max" data-i18n="sortCPUMax">
@@ -606,6 +609,7 @@
               <col class="col-conclusion" />
               <col class="col-vm" />
               <col class="col-ip" />
+              <col class="col-first-sample" />
               <col class="col-purpose" />
               <col class="col-manager" />
               <col class="col-term" />
@@ -620,6 +624,22 @@
                 <th data-i18n="conclusion">结论</th>
                 <th data-i18n="virtualMachine">虚拟机</th>
                 <th>IP</th>
+                <th class="first-sample-header">
+                  <span
+                    class="header-tooltip"
+                    tabindex="0"
+                    aria-describedby="first-sample-at-tip"
+                    ><span data-i18n="firstSampleAt">最早有效采集时间</span
+                    ><span
+                      class="tooltip-content"
+                      id="first-sample-at-tip"
+                      role="tooltip"
+                      data-i18n="firstSampleAtTip"
+                      >当前查询范围内，VRM
+                      返回的所选资源指标中最早的一条有效采样数据时间；不等同于虚拟机创建或开机时间。</span
+                    ></span
+                  >
+                </th>
                 <th data-i18n="purpose">用途</th>
                 <th data-i18n="manager">管理人</th>
                 <th data-i18n="term">使用期限</th>
@@ -632,7 +652,7 @@
             </thead>
             <tbody id="resultBody">
               <tr class="empty">
-                <td colspan="11" data-i18n="emptyPrompt">
+                <td colspan="12" data-i18n="emptyPrompt">
                   输入连接信息与筛选条件后执行查询
                 </td>
               </tr>

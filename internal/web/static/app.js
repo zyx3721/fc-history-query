@@ -51,6 +51,7 @@ const translations = {
     sortIP: "IP 地址",
     sortName: "虚拟机名称",
     sortDescription: "用途",
+    sortFirstSampleAt: "最早有效采集时间",
     sortCluster: "集群",
     sortHost: "主机",
     sortCPUMax: "CPU 最大值",
@@ -104,6 +105,9 @@ const translations = {
     noFilteredResults: "没有符合当前筛选条件的结果",
     conclusion: "结论",
     virtualMachine: "虚拟机",
+    firstSampleAt: "最早有效采集时间",
+    firstSampleAtTip:
+      "当前查询范围内，VRM 返回的所选资源指标中最早的一条有效采样数据时间；不等同于虚拟机创建或开机时间。",
     description: "描述",
     purpose: "用途",
     manager: "管理人",
@@ -137,6 +141,7 @@ const translations = {
     completed: "查询完成",
     csvConclusion: "结论",
     csvVm: "虚拟机",
+    csvFirstSampleAt: "最早有效采集时间",
     csvDescription: "描述",
     csvPurpose: "用途",
     csvManager: "管理人",
@@ -202,6 +207,7 @@ const translations = {
     sortIP: "IP address",
     sortName: "Virtual machine name",
     sortDescription: "Purpose",
+    sortFirstSampleAt: "Earliest valid sample time",
     sortCluster: "Cluster",
     sortHost: "Host",
     sortCPUMax: "CPU maximum",
@@ -255,6 +261,9 @@ const translations = {
     noFilteredResults: "No results match the current filters",
     conclusion: "Result",
     virtualMachine: "Virtual machine",
+    firstSampleAt: "Earliest valid sample time",
+    firstSampleAtTip:
+      "The earliest valid sample returned by VRM for the selected metrics within the query range; it is not the VM creation or power-on time.",
     description: "Description",
     purpose: "Purpose",
     manager: "Manager",
@@ -289,6 +298,7 @@ const translations = {
     completed: "Query complete",
     csvConclusion: "Result",
     csvVm: "Virtual machine",
+    csvFirstSampleAt: "Earliest valid sample time",
     csvDescription: "Description",
     csvPurpose: "Purpose",
     csvManager: "Manager",
@@ -653,6 +663,27 @@ function format(value) {
   );
 }
 
+function sampleTimeParts(value) {
+  const sampleAt = new Date(value);
+  if (!value || Number.isNaN(sampleAt.getTime())) return null;
+  const pad = (number) => String(number).padStart(2, "0");
+  return {
+    date: `${sampleAt.getFullYear()}-${pad(sampleAt.getMonth() + 1)}-${pad(sampleAt.getDate())}`,
+    time: `${pad(sampleAt.getHours())}:${pad(sampleAt.getMinutes())}:${pad(sampleAt.getSeconds())}`,
+  };
+}
+
+function sampleTimeText(value) {
+  const parts = sampleTimeParts(value);
+  return parts ? `${parts.date} ${parts.time}` : t("noData");
+}
+
+function sampleTimeCell(value) {
+  const parts = sampleTimeParts(value);
+  if (!parts) return esc(t("noData"));
+  return `<span>${esc(parts.date)}</span><span>${esc(parts.time)}</span>`;
+}
+
 function esc(value) {
   return String(value || "").replace(
     /[&<>'"]/g,
@@ -745,6 +776,7 @@ function rowSearchText(row) {
     row.urn,
     row.ip,
     row.description,
+    sampleTimeText(row.firstSampleAt),
     description.purpose,
     description.manager,
     description.term,
@@ -843,6 +875,14 @@ function compareResultRows(left, right, sortBy) {
       splitDescription(right.description).purpose,
     );
   }
+  if (sortBy === "first_sample_at") {
+    const leftTime = new Date(left.firstSampleAt).getTime();
+    const rightTime = new Date(right.firstSampleAt).getTime();
+    const leftMissing = Number.isNaN(leftTime);
+    const rightMissing = Number.isNaN(rightTime);
+    if (leftMissing !== rightMissing) return leftMissing ? 1 : -1;
+    return leftMissing ? 0 : leftTime - rightTime;
+  }
   return resultCollator.compare(
     left[fields[sortBy] || "ip"] || "",
     right[fields[sortBy] || "ip"] || "",
@@ -870,12 +910,12 @@ function renderResults(result) {
         .map(
           (row) => `
     <tr><td><span class="badge ${row.pass ? "pass" : "fail"}">${t(row.pass ? "pass" : "fail")}</span></td>
-    <td><strong class="vm-name" title="${esc(row.name || "-")}">${esc(row.name || "-")}</strong><small class="vm-urn" title="${esc(row.urn || "-")}">${esc(row.urn || "-")}</small></td><td>${esc(row.ip || "-")}</td><td class="purpose-cell">${esc(splitDescription(row.description).purpose)}</td><td class="manager-cell">${esc(splitDescription(row.description).manager)}</td><td class="term-cell">${esc(splitDescription(row.description).term)}</td>
+    <td><strong class="vm-name" title="${esc(row.name || "-")}">${esc(row.name || "-")}</strong><small class="vm-urn" title="${esc(row.urn || "-")}">${esc(row.urn || "-")}</small></td><td>${esc(row.ip || "-")}</td><td class="first-sample-cell">${sampleTimeCell(row.firstSampleAt)}</td><td class="purpose-cell">${esc(splitDescription(row.description).purpose)}</td><td class="manager-cell">${esc(splitDescription(row.description).manager)}</td><td class="term-cell">${esc(splitDescription(row.description).term)}</td>
     <td>${esc(row.clusterName || "-")}<small>${esc(row.hostName || "")}</small></td>
     <td>${metricText(row.metrics, "cpu_usage")}</td><td>${metricText(row.metrics, "mem_usage")}</td><td>${metricText(row.metrics, "disk_usage")}</td><td>${ratioText(row.metrics)}</td></tr>`,
         )
         .join("")
-    : `<tr class="empty"><td colspan="11">${t(allRows.length ? "noFilteredResults" : "noRunningVMs")}</td></tr>`;
+    : `<tr class="empty"><td colspan="12">${t(allRows.length ? "noFilteredResults" : "noRunningVMs")}</td></tr>`;
 }
 
 function clearResults() {
@@ -894,6 +934,7 @@ function exportExcel() {
     t("csvConclusion"),
     t("csvVm"),
     "IP",
+    t("csvFirstSampleAt"),
     t("csvPurpose"),
     t("csvManager"),
     t("csvTerm"),
@@ -914,6 +955,7 @@ function exportExcel() {
     row.pass ? t("pass") : t("fail"),
     row.name,
     row.ip,
+    sampleTimeText(row.firstSampleAt),
     splitDescription(row.description).purpose,
     splitDescription(row.description).manager,
     splitDescription(row.description).term,
@@ -939,7 +981,7 @@ function exportExcel() {
     headers: header,
     rows: lines,
     fileName: `fc-history-query-${new Date().toISOString().slice(0, 10)}.xlsx`,
-    columnWidths: [11, 16, 16, 34, 14, 14, 18, 18, 14, 14, 14, 14, 14, 14],
+    columnWidths: [11, 16, 16, 20, 34, 14, 14, 18, 18, 14, 14, 14, 14, 14, 14],
   });
 }
 

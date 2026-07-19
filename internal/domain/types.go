@@ -64,23 +64,25 @@ type QueryOptions struct {
 }
 
 type MetricSummary struct {
-	SampleCount int     `json:"sampleCount"`
-	Average     float64 `json:"average"`
-	Maximum     float64 `json:"maximum"`
-	LowRatio    float64 `json:"lowRatio"`
-	Pass        bool    `json:"pass"`
-	NoData      bool    `json:"noData"`
+	SampleCount   int        `json:"sampleCount"`
+	Average       float64    `json:"average"`
+	Maximum       float64    `json:"maximum"`
+	LowRatio      float64    `json:"lowRatio"`
+	Pass          bool       `json:"pass"`
+	NoData        bool       `json:"noData"`
+	FirstSampleAt *time.Time `json:"-"`
 }
 
 type ResultRow struct {
-	URN         string                   `json:"urn"`
-	Name        string                   `json:"name"`
-	Description string                   `json:"description"`
-	IP          string                   `json:"ip"`
-	ClusterName string                   `json:"clusterName"`
-	HostName    string                   `json:"hostName"`
-	Metrics     map[string]MetricSummary `json:"metrics"`
-	Pass        bool                     `json:"pass"`
+	URN           string                   `json:"urn"`
+	Name          string                   `json:"name"`
+	Description   string                   `json:"description"`
+	IP            string                   `json:"ip"`
+	ClusterName   string                   `json:"clusterName"`
+	HostName      string                   `json:"hostName"`
+	Metrics       map[string]MetricSummary `json:"metrics"`
+	FirstSampleAt *time.Time               `json:"firstSampleAt,omitempty"`
+	Pass          bool                     `json:"pass"`
 }
 
 type QueryResult struct {

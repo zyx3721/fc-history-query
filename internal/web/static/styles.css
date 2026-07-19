@@ -489,10 +489,9 @@ button:disabled {
 }
 .result-filter-primary {
   display: grid;
-  grid-template-columns: minmax(230px, 1.7fr) repeat(
-      4,
-      minmax(112px, 0.85fr)
-    ) auto;
+  grid-template-columns:
+    minmax(230px, 1.7fr) repeat(4, minmax(112px, 0.85fr))
+    auto;
   align-items: end;
   gap: 12px;
 }
@@ -568,31 +567,34 @@ table {
   table-layout: fixed;
 }
 .col-conclusion {
-  width: 7%;
+  width: 6.5%;
 }
 .col-vm {
-  width: 11%;
-}
-.col-ip {
   width: 9.5%;
 }
-.col-purpose {
+.col-ip {
+  width: 8.5%;
+}
+.col-first-sample {
   width: 10%;
 }
+.col-purpose {
+  width: 7.5%;
+}
 .col-manager {
-  width: 6%;
+  width: 5.5%;
 }
 .col-term {
   width: 7.5%;
 }
 .col-cluster-host {
-  width: 9.5%;
+  width: 9%;
 }
 .col-metric {
-  width: 10.5%;
+  width: 10%;
 }
 .col-ratio {
-  width: 8%;
+  width: 6.5%;
 }
 th,
 td {
@@ -607,6 +609,9 @@ th {
   letter-spacing: 0;
   text-align: center;
   white-space: nowrap;
+}
+th.first-sample-header {
+  overflow: visible;
 }
 th,
 td {
@@ -655,6 +660,59 @@ td small {
 .term-cell {
   white-space: normal;
   overflow-wrap: anywhere;
+}
+.first-sample-cell span {
+  display: block;
+  white-space: nowrap;
+}
+.first-sample-cell span + span {
+  margin-top: 4px;
+  color: var(--faint);
+  font-family: Consolas, monospace;
+  font-size: 11px;
+}
+.header-tooltip {
+  position: relative;
+  display: inline-flex;
+  cursor: help;
+  outline: none;
+}
+.header-tooltip:focus-visible {
+  border-radius: 2px;
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.tooltip-content {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 8px);
+  left: 50%;
+  width: 270px;
+  padding: 9px 10px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--ink) 16%, transparent);
+  font-family: "Microsoft YaHei UI", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: normal;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -4px);
+  visibility: hidden;
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease,
+    visibility 0.16s ease;
+}
+.header-tooltip:hover .tooltip-content,
+.header-tooltip:focus .tooltip-content {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  visibility: visible;
 }
 .badge {
   display: inline-flex;

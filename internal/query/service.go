@@ -71,6 +71,9 @@ func (s Service) Execute(ctx context.Context, options domain.QueryOptions, repor
 		for _, metric := range options.Metrics {
 			summary := summarise(byKey[vm.URN+"\x00"+metric].MetricValue, options.Thresholds[metric], options.MatchMode, options.RequiredRatio)
 			row.Metrics[metric] = summary
+			if summary.FirstSampleAt != nil && (row.FirstSampleAt == nil || summary.FirstSampleAt.Before(*row.FirstSampleAt)) {
+				row.FirstSampleAt = summary.FirstSampleAt
+			}
 			row.Pass = row.Pass && summary.Pass && !summary.NoData
 		}
 		if row.Pass {
@@ -95,10 +98,17 @@ func makeRequests(vms []domain.VM, options domain.QueryOptions) []domain.History
 
 func summarise(points []domain.MetricPoint, threshold float64, matchMode string, requiredRatio float64) domain.MetricSummary {
 	values := make([]float64, 0, len(points))
+	var firstSampleAt *time.Time
 	for _, point := range points {
 		value, err := strconv.ParseFloat(point.Value, 64)
 		if err == nil && !math.IsNaN(value) && !math.IsInf(value, 0) {
 			values = append(values, value)
+			if timestamp, err := strconv.ParseInt(strings.TrimSpace(point.Time), 10, 64); err == nil {
+				sampleAt := time.Unix(timestamp, 0).UTC()
+				if firstSampleAt == nil || sampleAt.Before(*firstSampleAt) {
+					firstSampleAt = &sampleAt
+				}
+			}
 		}
 	}
 	if len(values) == 0 {
@@ -120,7 +130,7 @@ func summarise(points []domain.MetricPoint, threshold float64, matchMode string,
 	if matchMode == "ratio" {
 		pass = ratio >= requiredRatio
 	}
-	return domain.MetricSummary{SampleCount: len(values), Average: total / float64(len(values)), Maximum: maximum, LowRatio: ratio, Pass: pass}
+	return domain.MetricSummary{SampleCount: len(values), Average: total / float64(len(values)), Maximum: maximum, LowRatio: ratio, Pass: pass, FirstSampleAt: firstSampleAt}
 }
 
 func validateOptions(options domain.QueryOptions) error {
@@ -191,7 +201,7 @@ func sortRows(rows []domain.ResultRow, sortBy, direction string) {
 
 func validSortBy(sortBy string) bool {
 	switch sortBy {
-	case "", "ip", "name", "description", "cluster", "host", "cpu_max", "cpu_avg", "memory_max", "memory_avg", "disk_max", "disk_avg":
+	case "", "ip", "name", "description", "first_sample_at", "cluster", "host", "cpu_max", "cpu_avg", "memory_max", "memory_avg", "disk_max", "disk_avg":
 		return true
 	default:
 		return false
@@ -204,6 +214,8 @@ func compareRows(left, right domain.ResultRow, sortBy string) int {
 		return strings.Compare(left.Name, right.Name)
 	case "description":
 		return strings.Compare(descriptionParts(left.Description).Purpose, descriptionParts(right.Description).Purpose)
+	case "first_sample_at":
+		return compareSampleTime(left.FirstSampleAt, right.FirstSampleAt)
 	case "cluster":
 		return strings.Compare(left.ClusterName, right.ClusterName)
 	case "host":
@@ -223,6 +235,25 @@ func compareRows(left, right domain.ResultRow, sortBy string) int {
 	default:
 		return compareIP(left.IP, right.IP)
 	}
+}
+
+func compareSampleTime(left, right *time.Time) int {
+	if left == nil && right == nil {
+		return 0
+	}
+	if left == nil {
+		return 1
+	}
+	if right == nil {
+		return -1
+	}
+	if left.Before(*right) {
+		return -1
+	}
+	if left.After(*right) {
+		return 1
+	}
+	return 0
 }
 
 type descriptionFields struct {

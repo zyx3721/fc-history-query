@@ -49,6 +49,41 @@ func TestValidateOptionsQueryRangeMustExceedInterval(t *testing.T) {
 	}
 }
 
+func TestSummariseCapturesEarliestValidSampleTime(t *testing.T) {
+	summary := summarise([]domain.MetricPoint{
+		{Time: "1780185600", Value: "20"},
+		{Time: "invalid", Value: "10"},
+		{Time: "1780099200", Value: "invalid"},
+		{Time: "1780099200", Value: "5"},
+	}, 10, "all", 95)
+
+	if summary.FirstSampleAt == nil {
+		t.Fatal("summarise() FirstSampleAt = nil, want earliest valid sample time")
+	}
+	want := time.Unix(1780099200, 0).UTC()
+	if !summary.FirstSampleAt.Equal(want) {
+		t.Fatalf("summarise() FirstSampleAt = %s, want %s", summary.FirstSampleAt, want)
+	}
+	if summary.SampleCount != 3 {
+		t.Fatalf("summarise() SampleCount = %d, want 3", summary.SampleCount)
+	}
+}
+
+func TestSortRowsByFirstSampleAt(t *testing.T) {
+	later := time.Unix(1780185600, 0).UTC()
+	earlier := time.Unix(1780099200, 0).UTC()
+	rows := []domain.ResultRow{
+		{URN: "later", IP: "10.0.0.2", Pass: true, FirstSampleAt: &later},
+		{URN: "missing", IP: "10.0.0.3", Pass: true},
+		{URN: "earlier", IP: "10.0.0.1", Pass: true, FirstSampleAt: &earlier},
+	}
+
+	sortRows(rows, "first_sample_at", "asc")
+	if got, want := []string{rows[0].URN, rows[1].URN, rows[2].URN}, []string{"earlier", "later", "missing"}; strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("sortRows() order = %v, want %v", got, want)
+	}
+}
+
 func validQueryOptions(start, end time.Time, intervalSeconds int) domain.QueryOptions {
 	return domain.QueryOptions{
 		Start:           start,
