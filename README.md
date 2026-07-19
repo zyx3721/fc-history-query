@@ -153,7 +153,7 @@ go run ./cmd/server
 ## 2.4 Docker 启动
 
 ```bash
-docker run -d --name fc-history-query --restart unless-stopped -p 8088:8088 registry.cn-shenzhen.aliyuncs.com/zyx3721/fc-history-query:latest
+docker run -d --name fc-history-query --restart unless-stopped -p 8088:8088 zyx3721/fc-history-query:latest
 ```
 
 # 三、使用说明
