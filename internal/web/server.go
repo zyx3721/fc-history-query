@@ -7,7 +7,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
+	"log"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
@@ -22,12 +25,17 @@ import (
 var assets embed.FS
 
 type Server struct {
-	mux  *http.ServeMux
-	jobs *jobStore
+	mux    *http.ServeMux
+	jobs   *jobStore
+	logger *log.Logger
 }
 
 func NewServer() *Server {
-	server := &Server{mux: http.NewServeMux(), jobs: newJobStore()}
+	return newServer(log.Default())
+}
+
+func newServer(logger *log.Logger) *Server {
+	server := &Server{mux: http.NewServeMux(), jobs: newJobStore(), logger: logger}
 	server.mux.HandleFunc("/api/queries", server.handleQueries)
 	server.mux.HandleFunc("/api/queries/", server.handleQuery)
 	static, _ := fs.Sub(assets, "static")
@@ -42,7 +50,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleQueries(w http.ResponseWriter, r *http.Request) {
+	clientIP := requestClientIP(r)
 	if r.Method != http.MethodPost {
+		s.logQueryEvent(clientIP, "query.create.rejected", "reason", "method_not_allowed")
 		writeError(w, http.StatusMethodNotAllowed, "仅支持 POST 请求")
 		return
 	}
@@ -51,33 +61,40 @@ func (s *Server) handleQueries(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&input); err != nil {
+		s.logQueryEvent(clientIP, "query.create.rejected", "reason", "invalid_request")
 		writeError(w, http.StatusBadRequest, "请求格式无效: "+err.Error())
 		return
 	}
 	connection := input.connection()
 	client, err := fusion.NewClient(connection)
 	if err != nil {
+		s.logQueryEvent(clientIP, "query.create.rejected", "reason", "invalid_connection")
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	options, err := input.options()
 	if err != nil {
+		s.logQueryEvent(clientIP, "query.create.rejected", "reason", "invalid_options")
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	job := s.jobs.create()
+	job := s.jobs.create(clientIP)
+	s.logQueryEvent(clientIP, "query.created", "job_id", job.id, "metrics", len(options.Metrics), "start", options.Start.Format(time.RFC3339), "end", options.End.Format(time.RFC3339), "interval_seconds", options.IntervalSeconds)
 	go s.runQuery(job, client, options)
 	writeJSON(w, http.StatusAccepted, job.snapshot())
 }
 
 func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request) {
+	clientIP := requestClientIP(r)
 	id := strings.TrimPrefix(r.URL.Path, "/api/queries/")
 	if id == "" || strings.Contains(id, "/") {
+		s.logQueryEvent(clientIP, "query.access.rejected", "reason", "invalid_job_id")
 		writeError(w, http.StatusNotFound, "查询任务不存在")
 		return
 	}
 	job, ok := s.jobs.get(id)
 	if !ok {
+		s.logQueryEvent(clientIP, "query.access.rejected", "job_id", id, "reason", "job_not_found")
 		writeError(w, http.StatusNotFound, "查询任务不存在或已过期")
 		return
 	}
@@ -86,6 +103,7 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, job.snapshot())
 	case http.MethodDelete:
 		job.cancel()
+		s.logQueryEvent(clientIP, "query.cancel.requested", "job_id", job.id, "created_by_ip", job.clientIP)
 		writeJSON(w, http.StatusOK, job.snapshot())
 	default:
 		writeError(w, http.StatusMethodNotAllowed, "不支持的请求方法")
@@ -97,13 +115,61 @@ func (s *Server) runQuery(job *job, client *fusion.Client, options domain.QueryO
 	job.updateProgress(domain.Progress{Phase: "authenticating", Message: "正在登录并获取站点信息"})
 	if err := client.Prepare(job.context); err != nil {
 		job.finish(domain.QueryResult{}, err)
+		s.logQueryOutcome(job, domain.QueryResult{}, err)
 		s.jobs.expireLater(job.id)
 		return
 	}
 	service := query.Service{Source: client, RequestDelay: 250 * time.Millisecond}
 	result, err := service.Execute(job.context, options, job.updateProgress)
 	job.finish(result, err)
+	s.logQueryOutcome(job, result, err)
 	s.jobs.expireLater(job.id)
+}
+
+func (s *Server) logQueryOutcome(job *job, result domain.QueryResult, err error) {
+	if err != nil {
+		outcome := "failed"
+		if errors.Is(err, context.Canceled) {
+			outcome = "cancelled"
+		}
+		s.logQueryEvent(job.clientIP, "query."+outcome, "job_id", job.id)
+		return
+	}
+	duration := result.FinishedAt.Sub(result.StartedAt).Round(time.Millisecond)
+	s.logQueryEvent(job.clientIP, "query.completed", "job_id", job.id, "scanned", result.Scanned, "matched", result.Matched, "duration", duration)
+}
+
+func (s *Server) logQueryEvent(clientIP, operation string, fields ...any) {
+	parts := []any{"time", time.Now().Format(time.RFC3339Nano), "client_ip", clientIP, "operation", operation}
+	parts = append(parts, fields...)
+	s.logger.Print(formatLogFields(parts...))
+}
+
+func formatLogFields(fields ...any) string {
+	parts := make([]string, 0, len(fields)/2)
+	for index := 0; index+1 < len(fields); index += 2 {
+		parts = append(parts, fields[index].(string)+"="+quotedLogValue(fields[index+1]))
+	}
+	return strings.Join(parts, " ")
+}
+
+func quotedLogValue(value any) string {
+	return "\"" + strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(toString(value)), "\\", "\\\\"), "\"", "\\\""), "\n", "\\n"), "\r", "\\r") + "\""
+}
+
+func toString(value any) string {
+	return fmt.Sprint(value)
+}
+
+func requestClientIP(r *http.Request) string {
+	host, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
+	if err == nil {
+		return host
+	}
+	if r.RemoteAddr == "" {
+		return "unknown"
+	}
+	return strings.TrimSpace(r.RemoteAddr)
 }
 
 type apiQueryRequest struct {
@@ -138,10 +204,10 @@ type jobStore struct {
 
 func newJobStore() *jobStore { return &jobStore{jobs: make(map[string]*job)} }
 
-func (s *jobStore) create() *job {
+func (s *jobStore) create(clientIP string) *job {
 	id := newID()
 	ctx, cancel := context.WithCancel(context.Background())
-	job := &job{id: id, context: ctx, cancelFunc: cancel, status: "running", startedAt: time.Now(), progress: domain.Progress{Phase: "queued", Message: "查询任务已创建"}}
+	job := &job{id: id, clientIP: clientIP, context: ctx, cancelFunc: cancel, status: "running", startedAt: time.Now(), progress: domain.Progress{Phase: "queued", Message: "查询任务已创建"}}
 	s.mu.Lock()
 	s.jobs[id] = job
 	s.mu.Unlock()
@@ -161,6 +227,7 @@ func (s *jobStore) expireLater(id string) {
 
 type job struct {
 	id         string
+	clientIP   string
 	context    context.Context
 	cancelFunc context.CancelFunc
 	mu         sync.RWMutex
