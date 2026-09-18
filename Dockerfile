@@ -5,6 +5,9 @@ FROM golang:1.25-alpine AS builder
 
 WORKDIR /src
 
+ARG GOPROXY=https://goproxy.cn,direct
+ENV GOPROXY=${GOPROXY}
+
 COPY . ./
 RUN go build -ldflags="-s -w" -o /out/fc-history-query ./cmd/server
 
