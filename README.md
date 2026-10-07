@@ -292,7 +292,9 @@ web测试-张三-长期
 | 3 | `GET <site_uri>/vms?limit=100&offset=…&status=running&detail=1` | 分页读取运行中的虚拟机、描述、IP、集群和主机信息。 |
 | 4 | `POST <site_uri>/monitors/objectmetric-curvedata?siteID=<site_id>` | 按站点和批次读取选中资源指标的历史曲线。 |
 
-资源请求统一携带 `Accept: application/json;charset=UTF-8`、`Accept-Language: zh_CN` 和 `X-Auth-Token`。历史查询请求显式传递 `statisticMethod: "average"`。
+资源请求统一携带 `Accept: application/json;version=8.0;charset=UTF-8`、`Accept-Language: zh_CN` 和 `X-Auth-Token`。历史查询请求显式传递 `statisticMethod: "average"`。
+
+> **`Accept` 必须带 `version=8.0`**：部分平台在缺少版本号时，`/vms` 等查询接口一律返回 **405 Method Not Allowed**，响应体是一张 HTML 错误页。带上版本号后各平台的查询接口均返回 200。
 
 ## 5.2 认证方式
 

@@ -24,6 +24,10 @@ type Client struct {
 	siteURLs   []string
 }
 
+// vrmAccept 是 VRM REST 接口要求的 Accept 头。
+// 缺 version=8.0 时，部分平台的查询接口会返回 405。
+const vrmAccept = "application/json;version=8.0;charset=UTF-8"
+
 func NewClient(connection domain.Connection) (*Client, error) {
 	if err := validateURL(connection.BaseURL); err != nil {
 		return nil, fmt.Errorf("私有云平台地址无效: %w", err)
@@ -117,7 +121,7 @@ func (c *Client) doJSON(ctx context.Context, method, endpoint string, body any, 
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Accept", "application/json;charset=UTF-8")
+	req.Header.Set("Accept", vrmAccept)
 	req.Header.Set("Accept-Language", "zh_CN")
 	req.Header.Set("X-Auth-Token", c.token)
 	if body != nil {
@@ -152,7 +156,7 @@ func (c *Client) authenticate(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Accept", "application/json;charset=UTF-8")
+	req.Header.Set("Accept", vrmAccept)
 	req.Header.Set("Content-Type", "application/json;charset=UTF-8")
 	req.Header.Set("Accept-Language", "zh_CN")
 	req.Header.Set("X-Auth-User", c.connection.Username)
