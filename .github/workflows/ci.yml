@@ -42,6 +42,7 @@ jobs:
           ALIYUN_IMAGE="registry.cn-shenzhen.aliyuncs.com/zyx3721/fc-history-query"
           IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/fc-history-query"
           VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
           if [[ "$VERSION" =~ (alpha|beta|rc|pre) ]]; then
             echo "tags=${ALIYUN_IMAGE}:${VERSION},${IMAGE}:${VERSION}" >> $GITHUB_OUTPUT
             echo "📦 检测到预发布版本: v${VERSION} (不打 latest 标签)"
@@ -57,23 +58,26 @@ jobs:
 
       - name: 交叉编译二进制文件
         run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          LDFLAGS="-s -w -X main.version=${VERSION}"
+
           echo "🔨 编译 Linux AMD64..."
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o fc-history-query-linux-amd64 ./cmd/server/main.go
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o fc-history-query-linux-amd64 ./cmd/server/main.go
 
           echo "🔨 编译 Linux ARM64..."
-          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w" -o fc-history-query-linux-arm64 ./cmd/server/main.go
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o fc-history-query-linux-arm64 ./cmd/server/main.go
 
           echo "🔨 编译 macOS AMD64..."
-          GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o fc-history-query-macos-amd64 ./cmd/server/main.go
+          GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o fc-history-query-macos-amd64 ./cmd/server/main.go
 
           echo "🔨 编译 macOS ARM64..."
-          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w" -o fc-history-query-macos-arm64 ./cmd/server/main.go
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o fc-history-query-macos-arm64 ./cmd/server/main.go
 
           echo "🔨 编译 Windows AMD64..."
-          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o fc-history-query-windows-amd64.exe ./cmd/server/main.go
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o fc-history-query-windows-amd64.exe ./cmd/server/main.go
 
           echo "🔨 编译 Windows ARM64..."
-          GOOS=windows GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w" -o fc-history-query-windows-arm64.exe ./cmd/server/main.go
+          GOOS=windows GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o fc-history-query-windows-arm64.exe ./cmd/server/main.go
 
           echo "📝 生成校验和..."
           sha256sum \
@@ -98,6 +102,7 @@ jobs:
           provenance: false
           build-args: |
             GOPROXY=https://proxy.golang.org,direct
+            VERSION=${{ steps.tags.outputs.version }}
 
       - name: 生成 Changelog
         id: changelog

@@ -9,7 +9,9 @@ ARG GOPROXY=https://goproxy.cn,direct
 ENV GOPROXY=${GOPROXY}
 
 COPY . ./
-RUN go build -ldflags="-s -w" -o /out/fc-history-query ./cmd/server
+
+ARG VERSION=dev
+RUN go build -ldflags="-s -w -X main.version=${VERSION}" -o /out/fc-history-query ./cmd/server
 
 ############################
 # 2) runtime

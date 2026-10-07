@@ -17,10 +17,20 @@ const (
 	defaultPort = 8088
 )
 
+// version 由构建时通过 -ldflags "-X main.version=<版本>" 注入，未注入时为 dev
+var version = "dev"
+
 func main() {
 	host := flag.String("host", defaultHost, "HTTP listen host")
 	port := flag.Int("port", defaultPort, "HTTP listen port")
+	showVersion := flag.Bool("v", false, "print version and exit")
+	showVersionLong := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
+
+	if *showVersion || *showVersionLong {
+		fmt.Println("fc-history-query", version)
+		return
+	}
 
 	address, err := listenAddress(*host, *port)
 	if err != nil {
